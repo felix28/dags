@@ -18,7 +18,7 @@ steps:
       args: ["--feedQueueId","17"]
       node_selectors:
         - name: "kops.k8s.io/instancegroup"
-          value: "jobqueue"
+          value: "nodes-us-east-1a"
       custom_configs:
         - name: hadoop.fs.s3a.impl
           value: org.apache.hadoop.fs.s3a.S3AFileSystem
