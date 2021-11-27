@@ -45,7 +45,7 @@ with DAG(
         Tests whether the volume has been mounted.
         """
         with open('/foo/volume_mount_test.txt', 'w') as foo:
-            foo.write('Hello')
+            foo.write('Mabuhay Batoy!')
 
         return_code = os.system("cat /foo/volume_mount_test.txt")
         assert return_code == 0
