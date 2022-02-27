@@ -1,0 +1,87 @@
+dag:
+  dag_id: env-tester-spark-tapadgraph-loader
+  schedule_interval: "0 */24 * * * "
+  start_date: "2019-12-11T12:00:00"
+  max_active_runs: 1
+  catchup: False
+  default_args:
+    owner: airflow
+steps:
+  - name: loading
+    type: scala-spark
+    spark_submit_image: 105618632367.dkr.ecr.us-east-1.amazonaws.com/airflow-base:airflow1.10.3-spark3.0.0
+    spark:
+      name: tapad-loading
+      master: k8s://https://kubernetes:443
+      application: local:///mediajel/spark/jobs/dmp-spark-jobs-assembly-1.0.jar
+      entry_class: com.mediajel.dmp.tapad.EnvVarTester
+      args: ["--feedQueueId","17"]
+      node_selectors:
+        - name: "kops.k8s.io/instancegroup"
+          value: "jobqueue"
+      custom_configs:
+        - name: hadoop.fs.s3a.impl
+          value: org.apache.hadoop.fs.s3a.S3AFileSystem
+        - name: network.timeout
+          value: 600s
+        - name: kubernetes.allocation.batch.size
+          value: 1
+        - name: kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-kubevolume.options.claimName
+          value: spark-tapad-claim
+        - name: kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-kubevolume.mount.readOnly
+          value: false
+        - name: kubernetes.executor.volumes.persistentVolumeClaim.spark-local-dir-kubevolume.mount.path
+          value: /mediajel/spark/localdata/spill
+      driver:
+        image: 105618632367.dkr.ecr.us-east-1.amazonaws.com/dmp-spark-jobs-3:latest
+        cores: 1
+        memory: 64m
+        labels:
+          - name: name
+            value: tapad-transformer-driver
+        env_vars:
+          - name: MANIFEST_MANAGER_URL
+            value: http://manifest-manager.default.svc.cluster.local:80
+          - name: SF_ID_DATABASE
+            value: DATA_COLLECTION_DB_STAGE
+          - name: SF_ID_SCHEMA
+            value: IDENTITIES
+          - name: SF_ID_TABLE
+            value: MJ_IDENTITIES
+        env_secrets:
+          - env_name: SF_ACCOUNT
+            secret_name: snowflake
+            key_name: snowflakeAccount
+          - env_name: SF_PASSWORD
+            secret_name: snowflake-vwi
+            key_name: password
+          - env_name: SF_USER
+            secret_name: snowflake-vwi
+            key_name: username
+      executor:
+        image: 105618632367.dkr.ecr.us-east-1.amazonaws.com/dmp-spark-jobs-3:latest
+        instances: 1
+        cores: 1
+        memory: 64m
+        labels:
+          - name: name
+            value: tapad-transformer-executor
+        env_vars:
+          - name: MANIFEST_MANAGER_URL
+            value: http://manifest-manager.default.svc.cluster.local:80
+          - name: SF_ID_DATABASE
+            value: DATA_COLLECTION_DB_STAGE
+          - name: SF_ID_SCHEMA
+            value: IDENTITY
+          - name: SF_ID_TABLE
+            value: IDENTITIES
+        env_secrets:
+          - env_name: SF_ACCOUNT
+            secret_name: snowflake
+            key_name: snowflakeAccount
+          - env_name: SF_PASSWORD
+            secret_name: snowflake-vwi
+            key_name: password
+          - env_name: SF_USER
+            secret_name: snowflake-vwi
+            key_name: username
