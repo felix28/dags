@@ -1,5 +1,5 @@
 dag:
-  dag_id: env-tester-spark-tapadgraph-loader
+  dag_id: env-tester-tapad-graph
   schedule_interval: "0 */24 * * * "
   start_date: "2019-12-11T12:00:00"
   max_active_runs: 1
